@@ -1,0 +1,234 @@
+:root {
+    --bg-color: #ffffff;
+    --card-width: 60px;
+    --card-height: 84px;
+    --card-gap: 10px;
+    --primary-color: #3b82f6; /* Blueish */
+    --confirm-color: #22c55e; /* Green */
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif; /* Sketchy feel */
+    background-color: var(--bg-color);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    user-select: none;
+}
+
+#game-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 1000px;
+    padding: 20px;
+}
+
+#game-header {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.logo {
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    padding: 5px 20px;
+    border-radius: 10px;
+    font-weight: bold;
+    font-size: 1.2em;
+}
+
+#player-scores {
+    display: flex;
+    gap: 10px;
+}
+
+.player-score {
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-weight: bold;
+    min-width: 60px;
+    text-align: center;
+}
+
+#round-tracker {
+    font-weight: bold;
+    color: #333;
+}
+
+#board {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    width: 100%;
+}
+
+.middle-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 800px;
+}
+
+.player-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.player-label {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #333;
+}
+
+.cards-container {
+    display: grid;
+    gap: var(--card-gap);
+}
+
+/* P1 and P3: 3 columns, 2 rows */
+.top .cards-container, .bottom .cards-container {
+    grid-template-columns: repeat(3, var(--card-width));
+    grid-template-rows: repeat(2, var(--card-height));
+}
+
+/* P2 and P4: 2 columns, 3 rows */
+.left .cards-container, .right .cards-container {
+    grid-template-columns: repeat(2, var(--card-width));
+    grid-template-rows: repeat(3, var(--card-height));
+}
+
+/* Card Styling */
+.card {
+    width: var(--card-width);
+    height: var(--card-height);
+    border: 2px solid var(--primary-color);
+    border-radius: 8px;
+    background-color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.2em;
+    cursor: pointer;
+    box-sizing: border-box;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card.face-down {
+    background-image: repeating-linear-gradient(
+        45deg,
+        #e0f2fe 0,
+        #e0f2fe 2px,
+        #fff 2px,
+        #fff 4px
+    );
+    color: transparent;
+}
+
+.card.face-up {
+    background-color: white;
+    font-weight: bold;
+}
+
+.card.red { color: red; }
+.card.black { color: black; }
+
+.card.selected {
+    box-shadow: 0 0 15px var(--confirm-color); /* Green glow */
+    transform: scale(1.1);
+    border-color: var(--confirm-color);
+    z-index: 10;
+}
+
+/* Center Area */
+#center-area {
+    display: flex;
+    gap: 40px; /* More space for the button */
+    align-items: center;
+    justify-content: center;
+    min-width: 250px;
+    position: relative;
+    padding: 20px;
+}
+
+.card-pile {
+    width: var(--card-width);
+    height: var(--card-height);
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    background-color: rgba(255,255,255,0.5);
+}
+
+#deck .card-back {
+    width: 100%;
+    height: 100%;
+    border-radius: 6px;
+    background-color: var(--primary-color);
+    background-image: repeating-linear-gradient(
+        45deg,
+        #e0f2fe 0,
+        #e0f2fe 2px,
+        #3b82f6 2px,
+        #3b82f6 4px
+    );
+    border: 2px solid var(--primary-color);
+}
+
+#action-area {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 20;
+    pointer-events: none; /* Let clicks pass through if hidden, though display:none handles that */
+}
+
+#action-area:not(.hidden) {
+    pointer-events: auto;
+}
+
+.hidden {
+    display: none !important;
+}
+
+#confirm-btn {
+    background-color: var(--confirm-color);
+    color: white;
+    border: 2px solid #15803d;
+    padding: 12px 24px;
+    border-radius: 25px; /* Pill shape */
+    font-size: 1.2em;
+    cursor: pointer;
+    font-weight: bold;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: transform 0.1s, background-color 0.2s;
+}
+
+#confirm-btn:hover {
+    background-color: #16a34a;
+    transform: scale(1.05);
+}
+
+#confirm-btn:active {
+    transform: scale(0.95);
+}

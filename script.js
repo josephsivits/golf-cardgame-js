@@ -1,0 +1,492 @@
+// Game State
+const state = {
+    players: [], // Array of 4 players
+    deck: [],
+    discardPile: [],
+    currentPlayerIndex: 0,
+    currentRound: 1,
+    maxRounds: 6,
+    selectedCard: null, // { playerIndex, cardIndex }
+    drawnCard: null, // Card drawn from deck/discard
+    phase: 'setup', // 'setup' (flip 2), 'draw' (pick deck/discard), 'action' (swap/discard), 'confirm'
+    turnState: {
+        source: null, // 'deck' or 'discard_pile'
+        targetIndex: null, // index in player's grid
+        cardsFlippedInSetup: 0 // Track how many cards P1 has flipped in setup
+    },
+    gameOver: false
+};
+
+// DOM Elements
+const elements = {
+    board: document.getElementById('board'),
+    deck: document.getElementById('deck'),
+    discardPile: document.getElementById('discard-pile'),
+    confirmBtn: document.getElementById('confirm-btn'),
+    actionArea: document.getElementById('action-area'),
+    roundTracker: document.getElementById('current-round'),
+    playerScores: [
+        document.getElementById('score-p1'),
+        document.getElementById('score-p2'),
+        document.getElementById('score-p3'),
+        document.getElementById('score-p4')
+    ],
+    players: [
+        {
+            div: document.getElementById('player-1'),
+            container: document.querySelector('#player-1 .cards-container'),
+            label: document.querySelector('#player-1 .player-label')
+        },
+        {
+            div: document.getElementById('player-2'),
+            container: document.querySelector('#player-2 .cards-container'),
+            label: document.querySelector('#player-2 .player-label')
+        },
+        {
+            div: document.getElementById('player-3'),
+            container: document.querySelector('#player-3 .cards-container'),
+            label: document.querySelector('#player-3 .player-label')
+        },
+        {
+            div: document.getElementById('player-4'),
+            container: document.querySelector('#player-4 .cards-container'),
+            label: document.querySelector('#player-4 .player-label')
+        }
+    ]
+};
+
+// Helpers
+function createDeck() {
+    const suits = ['♥', '♦', '♣', '♠'];
+    const values = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+    const deck = [];
+    for (let suit of suits) {
+        for (let value of values) {
+            let score = 0;
+            if (value === 'A') score = 1;
+            else if (['J', 'Q'].includes(value)) score = 10;
+            else if (value === 'K') score = 0;
+            else score = parseInt(value);
+            
+            deck.push({ suit, value, score, id: Math.random().toString(36).substr(2, 9) });
+        }
+    }
+    return deck;
+}
+
+function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
+// Initialization
+function initGame() {
+    state.currentRound = 1;
+    state.gameOver = false;
+    // Initialize empty players structure for scores
+    state.players = Array(4).fill(null).map((_, i) => ({
+        id: i,
+        hand: [],
+        totalScore: 0,
+        roundScore: 0
+    }));
+    
+    startRound();
+}
+
+function startRound() {
+    state.deck = shuffle(createDeck());
+    state.discardPile = []; // Start empty or with one? Golf usually starts with deck only, or one discard.
+    // Let's start with one discard so there's something to draw
+    state.discardPile = [state.deck.pop()]; 
+
+    // Deal cards
+    state.players.forEach(p => {
+        p.hand = [];
+        for (let c = 0; c < 6; c++) {
+            p.hand.push({
+                card: state.deck.pop(),
+                faceUp: false
+            });
+        }
+    });
+
+    state.currentPlayerIndex = 0;
+    state.phase = 'setup'; // Players flip 2 cards
+    state.turnState = { source: null, targetIndex: null, cardsFlippedInSetup: 0 };
+    
+    // AI Players flip 2 cards immediately (simplified)
+    for (let i = 1; i < 4; i++) {
+        flipRandomCards(i, 2);
+    }
+
+    updateUI();
+}
+
+function flipRandomCards(playerIndex, count) {
+    const player = state.players[playerIndex];
+    let flipped = 0;
+    while (flipped < count) {
+        const idx = Math.floor(Math.random() * 6);
+        if (!player.hand[idx].faceUp) {
+            player.hand[idx].faceUp = true;
+            flipped++;
+        }
+    }
+}
+
+// Rendering
+function updateUI() {
+    elements.roundTracker.textContent = state.currentRound;
+    
+    // Update Scores
+    state.players.forEach((p, i) => {
+        elements.playerScores[i].textContent = `P${i+1}: ${p.totalScore}`;
+    });
+
+    // Render Players
+    state.players.forEach((player, pIndex) => {
+        const container = elements.players[pIndex].container;
+        container.innerHTML = '';
+        
+        player.hand.forEach((slot, cIndex) => {
+            const cardEl = document.createElement('div');
+            // Show card if faceUp OR if it's the selected target during setup/confirm
+            const isVisible = slot.faceUp; 
+            
+            cardEl.className = `card ${isVisible ? 'face-up' : 'face-down'}`;
+            
+            if (isVisible) {
+                cardEl.textContent = `${slot.card.value}${slot.card.suit}`;
+                if (['♥', '♦'].includes(slot.card.suit)) {
+                    cardEl.classList.add('red');
+                } else {
+                    cardEl.classList.add('black');
+                }
+            }
+
+            // Highlighting logic
+            if (state.currentPlayerIndex === pIndex && pIndex === 0) {
+                // Highlight if selected for action
+                if (state.turnState.targetIndex === cIndex) {
+                    cardEl.classList.add('selected');
+                }
+            }
+
+            cardEl.onclick = () => handleCardClick(pIndex, cIndex);
+            container.appendChild(cardEl);
+        });
+
+        // Highlight active player
+        if (state.currentPlayerIndex === pIndex && !state.gameOver) {
+            elements.players[pIndex].label.style.color = 'var(--primary-color)';
+            // elements.players[pIndex].div.style.border = '2px solid var(--primary-color)';
+        } else {
+            elements.players[pIndex].label.style.color = '#333';
+            // elements.players[pIndex].div.style.border = 'none';
+        }
+    });
+
+    // Render Deck
+    const deckEl = elements.deck;
+    deckEl.innerHTML = '';
+    if (state.deck.length > 0) {
+        const back = document.createElement('div');
+        back.className = 'card-back';
+        deckEl.appendChild(back);
+        deckEl.onclick = () => handleDeckClick();
+    }
+
+    // Render Discard
+    const discardEl = elements.discardPile;
+    discardEl.innerHTML = '';
+    const topDiscard = state.discardPile[state.discardPile.length - 1];
+    if (topDiscard) {
+        const cardEl = document.createElement('div');
+        cardEl.className = 'card face-up';
+        cardEl.textContent = `${topDiscard.value}${topDiscard.suit}`;
+        if (['♥', '♦'].includes(topDiscard.suit)) {
+            cardEl.classList.add('red');
+        } else {
+            cardEl.classList.add('black');
+        }
+        discardEl.appendChild(cardEl);
+        discardEl.onclick = () => handleDiscardClick();
+    }
+
+    // Render Drawn Card Overlay (if holding one)
+    if (state.drawnCard) {
+        // If from deck, overlay on deck. If from discard, it IS the top discard.
+        if (state.turnState.source === 'deck') {
+             const drawnEl = document.createElement('div');
+             drawnEl.className = 'card face-up';
+             drawnEl.style.position = 'absolute';
+             drawnEl.style.zIndex = 10;
+             drawnEl.textContent = `${state.drawnCard.value}${state.drawnCard.suit}`;
+             if (['♥', '♦'].includes(state.drawnCard.suit)) drawnEl.classList.add('red');
+             else drawnEl.classList.add('black');
+             deckEl.appendChild(drawnEl);
+        } else if (state.turnState.source === 'discard') {
+            // Highlight discard pile
+             if(discardEl.firstElementChild) discardEl.firstElementChild.style.boxShadow = '0 0 10px gold';
+        }
+    }
+
+    // Confirm Button Visibility
+    if (state.phase === 'confirm' || (state.phase === 'setup' && state.turnState.targetIndex !== null)) {
+        elements.actionArea.classList.remove('hidden');
+    } else {
+        elements.actionArea.classList.add('hidden');
+    }
+}
+
+// Interaction Handlers
+
+function handleDeckClick() {
+    if (state.gameOver) return;
+    if (state.currentPlayerIndex !== 0) return;
+    if (state.phase !== 'draw') return;
+
+    // Draw from deck
+    const card = state.deck.pop();
+    state.drawnCard = card;
+    state.turnState.source = 'deck';
+    state.phase = 'action';
+    updateUI();
+}
+
+function handleDiscardClick() {
+    if (state.gameOver) return;
+    if (state.currentPlayerIndex !== 0) return;
+    
+    if (state.phase === 'draw') {
+        // Draw from discard
+        const card = state.discardPile.pop();
+        state.drawnCard = card;
+        state.turnState.source = 'discard';
+        state.phase = 'action';
+        updateUI();
+    } else if (state.phase === 'action' && state.turnState.source === 'deck') {
+        // Discarding the drawn card
+        state.turnState.targetIndex = -1; // -1 means discard pile
+        state.phase = 'confirm';
+        updateUI();
+    }
+}
+
+function handleCardClick(pIndex, cIndex) {
+    if (state.gameOver) return;
+    if (state.currentPlayerIndex !== pIndex) return;
+    if (pIndex !== 0) return;
+
+    if (state.phase === 'setup') {
+        // Selecting card to flip
+        const slot = state.players[0].hand[cIndex];
+        if (slot.faceUp) return; // Already flipped
+        
+        state.turnState.targetIndex = cIndex;
+        updateUI();
+    }
+    else if (state.phase === 'action') {
+        // Select card to swap
+        state.turnState.targetIndex = cIndex;
+        state.phase = 'confirm';
+        updateUI();
+    } else if (state.phase === 'confirm') {
+        // Change selection
+        state.turnState.targetIndex = cIndex;
+        updateUI();
+    }
+}
+
+elements.confirmBtn.onclick = () => {
+    if (state.phase === 'setup') {
+        handleSetupConfirm();
+    } else if (state.phase === 'confirm') {
+        handleTurnConfirm();
+    }
+};
+
+function handleSetupConfirm() {
+    if (state.turnState.targetIndex === null) return;
+    
+    const idx = state.turnState.targetIndex;
+    const player = state.players[0];
+    
+    // Flip card
+    player.hand[idx].faceUp = true;
+    state.turnState.cardsFlippedInSetup++;
+    state.turnState.targetIndex = null;
+    
+    if (state.turnState.cardsFlippedInSetup >= 2) {
+        // Setup done for P1
+        state.phase = 'draw';
+    }
+    
+    updateUI();
+}
+
+function handleTurnConfirm() {
+    const pIndex = state.currentPlayerIndex;
+    const player = state.players[pIndex];
+    
+    if (state.turnState.targetIndex === -1) {
+        // Discarding the drawn card (from deck)
+        state.discardPile.push(state.drawnCard);
+        // Usually you might flip a card here, but let's stick to simple Swap or Discard
+    } else {
+        // Swapping
+        const targetSlot = player.hand[state.turnState.targetIndex];
+        const oldCard = targetSlot.card;
+        
+        targetSlot.card = state.drawnCard;
+        targetSlot.faceUp = true;
+        
+        state.discardPile.push(oldCard); // Discard the old card
+    }
+
+    state.drawnCard = null;
+    endTurn();
+}
+
+function endTurn() {
+    // Check if current player just finished the round
+    // (Usually round ends when a player has all face up. Then everyone else gets 1 turn. 
+    // Simplified: Round ends immediately when someone is all face up, OR we play out the circle.)
+    
+    const currentPlayer = state.players[state.currentPlayerIndex];
+    const allFaceUp = currentPlayer.hand.every(s => s.faceUp);
+    
+    if (allFaceUp) {
+        calculateScores();
+        return;
+    }
+
+    state.phase = 'draw';
+    state.turnState = { source: null, targetIndex: null };
+    state.drawnCard = null;
+    
+    // Next player
+    state.currentPlayerIndex = (state.currentPlayerIndex + 1) % 4;
+    
+    updateUI();
+    
+    if (state.currentPlayerIndex !== 0) {
+        setTimeout(playAITurn, 1000);
+    }
+}
+
+function calculateScores() {
+    // Reveal all cards
+    state.players.forEach(p => {
+        p.hand.forEach(slot => slot.faceUp = true);
+        
+        // Calculate Score
+        // Simplified scoring: Sum of values. (Pairs cancel out is a common rule, ignoring for now unless requested)
+        let score = 0;
+        // Check for columns pairs? Let's just sum for now to be safe with "Golf Rules" meaning generic.
+        // Actually, pairs canceling is KEY to Golf.
+        // Let's implement Column Pairs cancel to 0.
+        // Hand indices:
+        // 0 1 2
+        // 3 4 5
+        // Columns: (0,3), (1,4), (2,5)
+        
+        for (let col = 0; col < 3; col++) {
+            const card1 = p.hand[col].card;
+            const card2 = p.hand[col + 3].card;
+            
+            if (card1.value === card2.value) {
+                // Cancel out -> 0 points
+            } else {
+                score += card1.score + card2.score;
+            }
+        }
+        
+        p.roundScore = score;
+        p.totalScore += score;
+    });
+    
+    updateUI();
+    
+    setTimeout(() => {
+        if (state.currentRound < state.maxRounds) {
+            alert(`Round ${state.currentRound} Over! Scores: ${state.players.map(p => p.roundScore).join(', ')}`);
+            state.currentRound++;
+            startRound();
+        } else {
+            alert(`Game Over! Final Scores: ${state.players.map(p => p.totalScore).join(', ')}`);
+            state.gameOver = true;
+        }
+    }, 1000);
+}
+
+function playAITurn() {
+    if (state.gameOver) return;
+    
+    const aiIndex = state.currentPlayerIndex;
+    const player = state.players[aiIndex];
+    
+    // Simple AI: Draw from deck (mostly)
+    // Sometimes take discard if it's low
+    
+    const topDiscard = state.discardPile[state.discardPile.length-1];
+    let tookDiscard = false;
+    
+    if (topDiscard && topDiscard.score < 5) { // Arbitrary simple logic
+        // Take discard
+        state.drawnCard = state.discardPile.pop();
+        tookDiscard = true;
+    } else {
+        // Take deck
+        if (state.deck.length === 0) {
+            // Reshuffle discard if empty? (Rare in 6 cards)
+            state.deck = state.discardPile.splice(0, state.discardPile.length - 1); // Keep top
+        }
+        state.drawnCard = state.deck.pop();
+    }
+    
+    // AI Decision: Swap with highest value face-up card or random face-down
+    // Find highest face up
+    let swapIndex = -1;
+    let maxVal = -1;
+    
+    // Simple strategy
+    player.hand.forEach((slot, idx) => {
+        if (slot.faceUp) {
+            if (slot.card.score > maxVal) {
+                maxVal = slot.card.score;
+                swapIndex = idx;
+            }
+        } else {
+            // Maybe swap face down
+            if (swapIndex === -1 && Math.random() > 0.5) swapIndex = idx;
+        }
+    });
+    
+    if (swapIndex === -1) swapIndex = Math.floor(Math.random() * 6);
+    
+    // Check if drawn card is worse than what we have? 
+    // If we took from discard, we MUST swap.
+    // If from deck, we can discard it.
+    
+    if (!tookDiscard && state.drawnCard.score > 8 && maxVal < 8) {
+        // Just discard it
+        state.discardPile.push(state.drawnCard);
+    } else {
+        // Swap
+        const oldCard = player.hand[swapIndex].card;
+        player.hand[swapIndex].card = state.drawnCard;
+        player.hand[swapIndex].faceUp = true;
+        state.discardPile.push(oldCard);
+    }
+    
+    state.drawnCard = null;
+    endTurn();
+}
+
+// Start
+initGame();

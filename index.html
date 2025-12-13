@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Golf Card Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <!-- Header / Status Bar -->
+        <div id="game-header">
+            <div class="logo">Golf</div>
+            <div id="player-scores">
+                <div class="player-score" id="score-p1">P1: 0</div>
+                <div class="player-score" id="score-p2">P2: 0</div>
+                <div class="player-score" id="score-p3">P3: 0</div>
+                <div class="player-score" id="score-p4">P4: 0</div>
+            </div>
+            <div id="round-tracker">Round <span id="current-round">1</span>/6</div>
+        </div>
+
+        <!-- Game Board -->
+        <div id="board">
+            <!-- Player 3 (Top) -->
+            <div id="player-3" class="player-area top">
+                <div class="player-label">P3</div>
+                <div class="cards-container"></div>
+            </div>
+
+            <!-- Middle Row: P2, Center, P4 -->
+            <div class="middle-row">
+                <!-- Player 2 (Left) -->
+                <div id="player-2" class="player-area left">
+                    <div class="player-label">P2</div>
+                    <div class="cards-container"></div>
+                </div>
+
+                <!-- Center Area (Deck & Discard) -->
+                <div id="center-area">
+                    <div id="deck" class="card-pile">
+                        <div class="card-back"></div>
+                    </div>
+                    
+                    <!-- Action Area (Confirm Button) - Centered -->
+                    <div id="action-area" class="hidden">
+                        <button id="confirm-btn">Confirm</button>
+                    </div>
+
+                    <div id="discard-pile" class="card-pile">
+                        <!-- Discarded card goes here -->
+                    </div>
+                </div>
+
+                <!-- Player 4 (Right) -->
+                <div id="player-4" class="player-area right">
+                    <div class="player-label">P4</div>
+                    <div class="cards-container"></div>
+                </div>
+            </div>
+
+            <!-- Player 1 (Bottom) - Main Player -->
+            <div id="player-1" class="player-area bottom">
+                <div class="cards-container"></div>
+                <div class="player-label">P1</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
