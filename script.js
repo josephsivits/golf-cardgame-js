@@ -33,7 +33,7 @@ const elements = {
     ],
     players: [
         {
-            div: document.getElementById('player-1'),
+            div: document.getElementById('player-1'), // Section element now
             container: document.querySelector('#player-1 .cards-container'),
             label: document.querySelector('#player-1 .player-label')
         },
@@ -99,8 +99,7 @@ function initGame() {
 
 function startRound() {
     state.deck = shuffle(createDeck());
-    state.discardPile = []; // Start empty or with one? Golf usually starts with deck only, or one discard.
-    // Let's start with one discard so there's something to draw
+    state.discardPile = []; 
     state.discardPile = [state.deck.pop()]; 
 
     // Deal cards
@@ -150,7 +149,18 @@ function updateUI() {
     // Render Players
     state.players.forEach((player, pIndex) => {
         const container = elements.players[pIndex].container;
+        const playerDiv = elements.players[pIndex].div;
+        
         container.innerHTML = '';
+        
+        // Active Player Indication (Green Outline)
+        if (state.currentPlayerIndex === pIndex && !state.gameOver) {
+            playerDiv.classList.add('active-turn');
+            elements.players[pIndex].label.style.color = 'var(--primary-color)';
+        } else {
+            playerDiv.classList.remove('active-turn');
+            elements.players[pIndex].label.style.color = '#333';
+        }
         
         player.hand.forEach((slot, cIndex) => {
             const cardEl = document.createElement('div');
@@ -158,6 +168,10 @@ function updateUI() {
             const isVisible = slot.faceUp; 
             
             cardEl.className = `card ${isVisible ? 'face-up' : 'face-down'}`;
+            // Accessibility: Make cards focusable
+            cardEl.setAttribute('role', 'button');
+            cardEl.setAttribute('tabindex', '0');
+            cardEl.setAttribute('aria-label', isVisible ? `${slot.card.value} of ${slot.card.suit}` : 'Face down card');
             
             if (isVisible) {
                 cardEl.textContent = `${slot.card.value}${slot.card.suit}`;
@@ -176,18 +190,17 @@ function updateUI() {
                 }
             }
 
-            cardEl.onclick = () => handleCardClick(pIndex, cIndex);
+            const clickHandler = () => handleCardClick(pIndex, cIndex);
+            cardEl.onclick = clickHandler;
+            cardEl.onkeydown = (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    clickHandler();
+                }
+            };
+            
             container.appendChild(cardEl);
         });
-
-        // Highlight active player
-        if (state.currentPlayerIndex === pIndex && !state.gameOver) {
-            elements.players[pIndex].label.style.color = 'var(--primary-color)';
-            // elements.players[pIndex].div.style.border = '2px solid var(--primary-color)';
-        } else {
-            elements.players[pIndex].label.style.color = '#333';
-            // elements.players[pIndex].div.style.border = 'none';
-        }
     });
 
     // Render Deck
@@ -198,12 +211,20 @@ function updateUI() {
         back.className = 'card-back';
         deckEl.appendChild(back);
         deckEl.onclick = () => handleDeckClick();
+        deckEl.onkeydown = (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleDeckClick();
+            }
+        };
     }
 
     // Render Discard
     const discardEl = elements.discardPile;
     discardEl.innerHTML = '';
     const topDiscard = state.discardPile[state.discardPile.length - 1];
+    
+    // Always clear, then re-add top card
     if (topDiscard) {
         const cardEl = document.createElement('div');
         cardEl.className = 'card face-up';
@@ -214,12 +235,23 @@ function updateUI() {
             cardEl.classList.add('black');
         }
         discardEl.appendChild(cardEl);
-        discardEl.onclick = () => handleDiscardClick();
+        
+        // Update aria-label for discard pile
+        discardEl.setAttribute('aria-label', `Discard Pile: Top card is ${topDiscard.value} of ${topDiscard.suit}`);
+    } else {
+        discardEl.setAttribute('aria-label', 'Discard Pile: Empty');
     }
+    
+    discardEl.onclick = () => handleDiscardClick();
+    discardEl.onkeydown = (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleDiscardClick();
+        }
+    };
 
     // Render Drawn Card Overlay (if holding one)
     if (state.drawnCard) {
-        // If from deck, overlay on deck. If from discard, it IS the top discard.
         if (state.turnState.source === 'deck') {
              const drawnEl = document.createElement('div');
              drawnEl.className = 'card face-up';
@@ -230,7 +262,6 @@ function updateUI() {
              else drawnEl.classList.add('black');
              deckEl.appendChild(drawnEl);
         } else if (state.turnState.source === 'discard') {
-            // Highlight discard pile
              if(discardEl.firstElementChild) discardEl.firstElementChild.style.boxShadow = '0 0 10px gold';
         }
     }
@@ -238,6 +269,7 @@ function updateUI() {
     // Confirm Button Visibility
     if (state.phase === 'confirm' || (state.phase === 'setup' && state.turnState.targetIndex !== null)) {
         elements.actionArea.classList.remove('hidden');
+        elements.confirmBtn.focus(); // Focus management
     } else {
         elements.actionArea.classList.add('hidden');
     }
@@ -263,6 +295,8 @@ function handleDiscardClick() {
     if (state.currentPlayerIndex !== 0) return;
     
     if (state.phase === 'draw') {
+        if (state.discardPile.length === 0) return; // Can't draw from empty discard
+        
         // Draw from discard
         const card = state.discardPile.pop();
         state.drawnCard = card;
@@ -336,7 +370,6 @@ function handleTurnConfirm() {
     if (state.turnState.targetIndex === -1) {
         // Discarding the drawn card (from deck)
         state.discardPile.push(state.drawnCard);
-        // Usually you might flip a card here, but let's stick to simple Swap or Discard
     } else {
         // Swapping
         const targetSlot = player.hand[state.turnState.targetIndex];
@@ -353,10 +386,6 @@ function handleTurnConfirm() {
 }
 
 function endTurn() {
-    // Check if current player just finished the round
-    // (Usually round ends when a player has all face up. Then everyone else gets 1 turn. 
-    // Simplified: Round ends immediately when someone is all face up, OR we play out the circle.)
-    
     const currentPlayer = state.players[state.currentPlayerIndex];
     const allFaceUp = currentPlayer.hand.every(s => s.faceUp);
     
@@ -384,16 +413,7 @@ function calculateScores() {
     state.players.forEach(p => {
         p.hand.forEach(slot => slot.faceUp = true);
         
-        // Calculate Score
-        // Simplified scoring: Sum of values. (Pairs cancel out is a common rule, ignoring for now unless requested)
         let score = 0;
-        // Check for columns pairs? Let's just sum for now to be safe with "Golf Rules" meaning generic.
-        // Actually, pairs canceling is KEY to Golf.
-        // Let's implement Column Pairs cancel to 0.
-        // Hand indices:
-        // 0 1 2
-        // 3 4 5
-        // Columns: (0,3), (1,4), (2,5)
         
         for (let col = 0; col < 3; col++) {
             const card1 = p.hand[col].card;
@@ -431,30 +451,22 @@ function playAITurn() {
     const player = state.players[aiIndex];
     
     // Simple AI: Draw from deck (mostly)
-    // Sometimes take discard if it's low
-    
     const topDiscard = state.discardPile[state.discardPile.length-1];
     let tookDiscard = false;
     
-    if (topDiscard && topDiscard.score < 5) { // Arbitrary simple logic
-        // Take discard
+    if (topDiscard && topDiscard.score < 5) { 
         state.drawnCard = state.discardPile.pop();
         tookDiscard = true;
     } else {
-        // Take deck
         if (state.deck.length === 0) {
-            // Reshuffle discard if empty? (Rare in 6 cards)
-            state.deck = state.discardPile.splice(0, state.discardPile.length - 1); // Keep top
+            state.deck = state.discardPile.splice(0, state.discardPile.length - 1); 
         }
         state.drawnCard = state.deck.pop();
     }
     
-    // AI Decision: Swap with highest value face-up card or random face-down
-    // Find highest face up
     let swapIndex = -1;
     let maxVal = -1;
     
-    // Simple strategy
     player.hand.forEach((slot, idx) => {
         if (slot.faceUp) {
             if (slot.card.score > maxVal) {
@@ -462,22 +474,15 @@ function playAITurn() {
                 swapIndex = idx;
             }
         } else {
-            // Maybe swap face down
             if (swapIndex === -1 && Math.random() > 0.5) swapIndex = idx;
         }
     });
     
     if (swapIndex === -1) swapIndex = Math.floor(Math.random() * 6);
     
-    // Check if drawn card is worse than what we have? 
-    // If we took from discard, we MUST swap.
-    // If from deck, we can discard it.
-    
     if (!tookDiscard && state.drawnCard.score > 8 && maxVal < 8) {
-        // Just discard it
         state.discardPile.push(state.drawnCard);
     } else {
-        // Swap
         const oldCard = player.hand[swapIndex].card;
         player.hand[swapIndex].card = state.drawnCard;
         player.hand[swapIndex].faceUp = true;

@@ -9,62 +9,59 @@
 <body>
     <div id="game-container">
         <!-- Header / Status Bar -->
-        <div id="game-header">
-            <div class="logo">Golf</div>
-            <div id="player-scores">
-                <div class="player-score" id="score-p1">P1: 0</div>
-                <div class="player-score" id="score-p2">P2: 0</div>
-                <div class="player-score" id="score-p3">P3: 0</div>
-                <div class="player-score" id="score-p4">P4: 0</div>
+        <header id="game-header">
+            <h1 class="logo">Golf</h1>
+            <div id="player-scores" aria-label="Player Scores">
+                <div class="player-score" id="score-p1" aria-live="polite">P1: 0</div>
+                <div class="player-score" id="score-p2" aria-live="polite">P2: 0</div>
+                <div class="player-score" id="score-p3" aria-live="polite">P3: 0</div>
+                <div class="player-score" id="score-p4" aria-live="polite">P4: 0</div>
             </div>
-            <div id="round-tracker">Round <span id="current-round">1</span>/6</div>
-        </div>
+            <div id="round-tracker" aria-live="polite">Round <span id="current-round">1</span>/6</div>
+        </header>
 
         <!-- Game Board -->
-        <div id="board">
+        <main id="board" class="game-layout">
             <!-- Player 3 (Top) -->
-            <div id="player-3" class="player-area top">
-                <div class="player-label">P3</div>
+            <section id="player-3" class="player-area top" aria-label="Player 3">
+                <h2 class="player-label">P3</h2>
                 <div class="cards-container"></div>
-            </div>
+            </section>
 
-            <!-- Middle Row: P2, Center, P4 -->
-            <div class="middle-row">
-                <!-- Player 2 (Left) -->
-                <div id="player-2" class="player-area left">
-                    <div class="player-label">P2</div>
-                    <div class="cards-container"></div>
+            <!-- Player 2 (Left) -->
+            <section id="player-2" class="player-area left" aria-label="Player 2">
+                <h2 class="player-label">P2</h2>
+                <div class="cards-container"></div>
+            </section>
+
+            <!-- Center Area (Deck & Discard) -->
+            <section id="center-area" aria-label="Game Center">
+                <div id="deck" class="card-pile" role="button" tabindex="0" aria-label="Deck: Draw card">
+                    <div class="card-back"></div>
+                </div>
+                
+                <!-- Action Area (Confirm Button) - Centered -->
+                <div id="action-area" class="hidden">
+                    <button id="confirm-btn">Confirm</button>
                 </div>
 
-                <!-- Center Area (Deck & Discard) -->
-                <div id="center-area">
-                    <div id="deck" class="card-pile">
-                        <div class="card-back"></div>
-                    </div>
-                    
-                    <!-- Action Area (Confirm Button) - Centered -->
-                    <div id="action-area" class="hidden">
-                        <button id="confirm-btn">Confirm</button>
-                    </div>
-
-                    <div id="discard-pile" class="card-pile">
-                        <!-- Discarded card goes here -->
-                    </div>
+                <div id="discard-pile" class="card-pile" role="button" tabindex="0" aria-label="Discard Pile">
+                    <!-- Discarded card goes here -->
                 </div>
+            </section>
 
-                <!-- Player 4 (Right) -->
-                <div id="player-4" class="player-area right">
-                    <div class="player-label">P4</div>
-                    <div class="cards-container"></div>
-                </div>
-            </div>
+            <!-- Player 4 (Right) -->
+            <section id="player-4" class="player-area right" aria-label="Player 4">
+                <h2 class="player-label">P4</h2>
+                <div class="cards-container"></div>
+            </section>
 
             <!-- Player 1 (Bottom) - Main Player -->
-            <div id="player-1" class="player-area bottom">
+            <section id="player-1" class="player-area bottom" aria-label="Player 1 (You)">
                 <div class="cards-container"></div>
-                <div class="player-label">P1</div>
-            </div>
-        </div>
+                <h2 class="player-label">P1</h2>
+            </section>
+        </main>
     </div>
 
     <script src="script.js"></script>
