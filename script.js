@@ -12,7 +12,7 @@ const state = {
     turnState: {
         source: null, // 'deck' or 'discard_pile'
         targetIndex: null, // index in player's grid
-        cardsFlippedInSetup: 0 // Track how many cards P1 has flipped in setup
+        cardsFlippedInSetup: 0 // Track how many cards CURRENT PLAYER has flipped in setup
     },
     gameOver: false
 };
@@ -117,24 +117,8 @@ function startRound() {
     state.phase = 'setup'; // Players flip 2 cards
     state.turnState = { source: null, targetIndex: null, cardsFlippedInSetup: 0 };
     
-    // AI Players flip 2 cards immediately (simplified)
-    for (let i = 1; i < 4; i++) {
-        flipRandomCards(i, 2);
-    }
-
+    // No AI auto-flip. All players must flip manually.
     updateUI();
-}
-
-function flipRandomCards(playerIndex, count) {
-    const player = state.players[playerIndex];
-    let flipped = 0;
-    while (flipped < count) {
-        const idx = Math.floor(Math.random() * 6);
-        if (!player.hand[idx].faceUp) {
-            player.hand[idx].faceUp = true;
-            flipped++;
-        }
-    }
 }
 
 // Rendering
@@ -183,7 +167,7 @@ function updateUI() {
             }
 
             // Highlighting logic
-            if (state.currentPlayerIndex === pIndex && pIndex === 0) {
+            if (state.currentPlayerIndex === pIndex) {
                 // Highlight if selected for action
                 if (state.turnState.targetIndex === cIndex) {
                     cardEl.classList.add('selected');
@@ -279,7 +263,7 @@ function updateUI() {
 
 function handleDeckClick() {
     if (state.gameOver) return;
-    if (state.currentPlayerIndex !== 0) return;
+    // Removed player check - any player can act on their turn
     if (state.phase !== 'draw') return;
 
     // Draw from deck
@@ -292,7 +276,7 @@ function handleDeckClick() {
 
 function handleDiscardClick() {
     if (state.gameOver) return;
-    if (state.currentPlayerIndex !== 0) return;
+    // Removed player check
     
     if (state.phase === 'draw') {
         if (state.discardPile.length === 0) return; // Can't draw from empty discard
@@ -313,12 +297,11 @@ function handleDiscardClick() {
 
 function handleCardClick(pIndex, cIndex) {
     if (state.gameOver) return;
-    if (state.currentPlayerIndex !== pIndex) return;
-    if (pIndex !== 0) return;
+    if (state.currentPlayerIndex !== pIndex) return; // Must be current player's turn and their own card
 
     if (state.phase === 'setup') {
         // Selecting card to flip
-        const slot = state.players[0].hand[cIndex];
+        const slot = state.players[pIndex].hand[cIndex];
         if (slot.faceUp) return; // Already flipped
         
         state.turnState.targetIndex = cIndex;
@@ -348,7 +331,7 @@ function handleSetupConfirm() {
     if (state.turnState.targetIndex === null) return;
     
     const idx = state.turnState.targetIndex;
-    const player = state.players[0];
+    const player = state.players[state.currentPlayerIndex];
     
     // Flip card
     player.hand[idx].faceUp = true;
@@ -356,8 +339,18 @@ function handleSetupConfirm() {
     state.turnState.targetIndex = null;
     
     if (state.turnState.cardsFlippedInSetup >= 2) {
-        // Setup done for P1
-        state.phase = 'draw';
+        // Setup done for THIS player
+        state.turnState.cardsFlippedInSetup = 0;
+        
+        // Move to next player for setup, OR start game if all done
+        // If we are at last player (3)
+        if (state.currentPlayerIndex === 3) {
+            state.currentPlayerIndex = 0; // Back to P1 to start game
+            state.phase = 'draw';
+        } else {
+            state.currentPlayerIndex++;
+            // Still in setup phase
+        }
     }
     
     updateUI();
@@ -403,9 +396,7 @@ function endTurn() {
     
     updateUI();
     
-    if (state.currentPlayerIndex !== 0) {
-        setTimeout(playAITurn, 1000);
-    }
+    // NO AI TURN CALL HERE
 }
 
 function calculateScores() {
@@ -442,55 +433,6 @@ function calculateScores() {
             state.gameOver = true;
         }
     }, 1000);
-}
-
-function playAITurn() {
-    if (state.gameOver) return;
-    
-    const aiIndex = state.currentPlayerIndex;
-    const player = state.players[aiIndex];
-    
-    // Simple AI: Draw from deck (mostly)
-    const topDiscard = state.discardPile[state.discardPile.length-1];
-    let tookDiscard = false;
-    
-    if (topDiscard && topDiscard.score < 5) { 
-        state.drawnCard = state.discardPile.pop();
-        tookDiscard = true;
-    } else {
-        if (state.deck.length === 0) {
-            state.deck = state.discardPile.splice(0, state.discardPile.length - 1); 
-        }
-        state.drawnCard = state.deck.pop();
-    }
-    
-    let swapIndex = -1;
-    let maxVal = -1;
-    
-    player.hand.forEach((slot, idx) => {
-        if (slot.faceUp) {
-            if (slot.card.score > maxVal) {
-                maxVal = slot.card.score;
-                swapIndex = idx;
-            }
-        } else {
-            if (swapIndex === -1 && Math.random() > 0.5) swapIndex = idx;
-        }
-    });
-    
-    if (swapIndex === -1) swapIndex = Math.floor(Math.random() * 6);
-    
-    if (!tookDiscard && state.drawnCard.score > 8 && maxVal < 8) {
-        state.discardPile.push(state.drawnCard);
-    } else {
-        const oldCard = player.hand[swapIndex].card;
-        player.hand[swapIndex].card = state.drawnCard;
-        player.hand[swapIndex].faceUp = true;
-        state.discardPile.push(oldCard);
-    }
-    
-    state.drawnCard = null;
-    endTurn();
 }
 
 // Start
