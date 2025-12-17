@@ -272,17 +272,11 @@ function updateUI() {
         if (state.selection.handIndex !== null) showConfirm = true;
     }
     else if (state.phase === 'draw') {
-        // Show confirm if:
-        // 1. Source is selected (Drawing)
-        // 2. Hand Card (Face Down) is selected (Flipping)
-        // 3. Hand Card (Face Up) + Source is selected (Pre-selected Swap)
-        
         if (state.selection.source) {
             showConfirm = true;
         } else if (state.selection.handIndex !== null) {
             const player = state.players[state.currentPlayerIndex];
             const slot = player.hand[state.selection.handIndex];
-            // If Face Down, valid flip. If Face Up, wait for source.
             if (!slot.faceUp) showConfirm = true;
         }
     }
@@ -302,8 +296,12 @@ function updateUI() {
 function handleDeckClick() {
     if (state.gameOver) return;
     if (state.phase === 'draw') {
-        state.selection.source = 'deck'; // Set source
-        // DO NOT clear handIndex (allows composite)
+        // Toggle Logic
+        if (state.selection.source === 'deck') {
+            state.selection.source = null;
+        } else {
+            state.selection.source = 'deck';
+        }
         updateUI();
     }
 }
@@ -313,12 +311,23 @@ function handleDiscardClick() {
     
     if (state.phase === 'draw') {
         if (state.discardPile.length === 0) return; 
-        state.selection.source = 'discard';
+        
+        // Toggle Logic
+        if (state.selection.source === 'discard') {
+            state.selection.source = null;
+        } else {
+            state.selection.source = 'discard';
+        }
         updateUI();
     } 
     else if (state.phase === 'action') {
-        state.selection.source = 'discard'; // Means discarding drawn card
-        state.selection.handIndex = null; // Can't swap if discarding
+        // Toggle Logic
+        if (state.selection.source === 'discard') {
+            state.selection.source = null;
+        } else {
+            state.selection.source = 'discard';
+            state.selection.handIndex = null; // Can't swap if discarding
+        }
         updateUI();
     }
 }
@@ -330,17 +339,32 @@ function handleCardClick(pIndex, cIndex) {
     if (state.phase === 'setup') {
         const slot = state.players[pIndex].hand[cIndex];
         if (slot.faceUp) return; 
-        state.selection.handIndex = cIndex;
+        
+        // Toggle
+        if (state.selection.handIndex === cIndex) {
+            state.selection.handIndex = null;
+        } else {
+            state.selection.handIndex = cIndex;
+        }
         updateUI();
     }
     else if (state.phase === 'draw') {
-        // Select Hand Card (Additive)
-        state.selection.handIndex = cIndex;
+        // Toggle
+        if (state.selection.handIndex === cIndex) {
+            state.selection.handIndex = null;
+        } else {
+            state.selection.handIndex = cIndex;
+        }
         updateUI();
     }
     else if (state.phase === 'action') {
-        state.selection.handIndex = cIndex;
-        state.selection.source = null; // Can't discard if swapping
+        // Toggle
+        if (state.selection.handIndex === cIndex) {
+            state.selection.handIndex = null;
+        } else {
+            state.selection.handIndex = cIndex;
+            state.selection.source = null; // Can't discard if swapping
+        }
         updateUI();
     }
 }
@@ -387,8 +411,7 @@ function confirmDrawPhase() {
         state.drawnCard = card;
         state.turnState.source = 'deck';
         state.phase = 'action';
-        // Preserve handIndex if set (pre-selection for swap)
-        state.selection.source = null; // Clear source as we used it
+        state.selection.source = null; 
     }
     // 2. Discard Draw (and Swap?)
     else if (source === 'discard') {
@@ -397,7 +420,6 @@ function confirmDrawPhase() {
         state.turnState.source = 'discard';
         
         if (handIndex !== null) {
-            // Immediate Swap if target also selected
             executeSwap(handIndex);
             return;
         } else {
@@ -423,7 +445,6 @@ function confirmDrawPhase() {
 
 function confirmActionPhase() {
     if (state.selection.source === 'discard') {
-        // Discarding the drawn card
         state.discardPile.push(state.drawnCard);
         state.drawnCard = null;
         state.selection = { source: null, handIndex: null };
