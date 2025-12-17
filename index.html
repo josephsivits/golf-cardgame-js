@@ -34,21 +34,19 @@
                 <div class="cards-container"></div>
             </section>
 
-            <!-- Center Area (Deck & Discard) -->
-            <section id="center-area" aria-label="Game Center">
-                <div id="deck" class="card-pile" role="button" tabindex="0" aria-label="Deck: Draw card">
-                    <div class="card-back"></div>
-                </div>
-                
-                <!-- Action Area (Confirm Button) - Centered -->
-                <div id="action-area" class="hidden">
-                    <button id="confirm-btn">Confirm</button>
-                </div>
+            <!-- Center Elements: Deck, Confirm, Discard -->
+            <div id="deck" class="card-pile" role="button" tabindex="0" aria-label="Deck: Draw card">
+                <div class="card-back"></div>
+            </div>
 
-                <div id="discard-pile" class="card-pile" role="button" tabindex="0" aria-label="Discard Pile">
-                    <!-- Discarded card goes here -->
-                </div>
-            </section>
+            <!-- Action Area (Confirm Button) -->
+            <div id="action-area" class="hidden">
+                <button id="confirm-btn">Confirm</button>
+            </div>
+
+            <div id="discard-pile" class="card-pile" role="button" tabindex="0" aria-label="Discard Pile">
+                <!-- Discarded card goes here -->
+            </div>
 
             <!-- Player 4 (Right) -->
             <section id="player-4" class="player-area right" aria-label="Player 4">

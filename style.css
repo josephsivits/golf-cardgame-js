@@ -7,6 +7,7 @@
     --confirm-color: #15803d; /* Darker Green for AA Contrast (was #22c55e) */
     --focus-outline: 3px solid #f59e0b; /* Orange focus ring */
     --active-player-color: #22c55e; /* Green for active player outline */
+    --selection-outline: 3px solid #22c55e; /* Green outline for selected elements */
 }
 
 body {
@@ -78,16 +79,23 @@ body {
 .game-layout {
     display: grid;
     grid-template-areas:
-        ".        player3  ."
-        "player2  center   player4"
-        ".        player1  .";
-    gap: 40px;
+        ".        player3  player3   player3  ."
+        "player2  deck     confirm   discard  player4"
+        ".        player1  player1   player1  ."
+    ;
+    gap: 20px;
     justify-items: center;
     align-items: center;
     width: 100%;
-    grid-template-columns: 1fr auto 1fr;
+    /* Columns: P2 | Deck | Confirm | Discard | P4 */
+    grid-template-columns: 1fr auto auto auto 1fr;
     grid-template-rows: 1fr auto 1fr;
 }
+
+/* Update Grid Areas for Center Elements */
+#deck { grid-area: deck; }
+#action-area { grid-area: confirm; }
+#discard-pile { grid-area: discard; }
 
 .player-area {
     display: flex;
@@ -118,20 +126,14 @@ body {
 #player-2 { grid-area: player2; }
 #player-3 { grid-area: player3; }
 #player-4 { grid-area: player4; }
-#center-area { grid-area: center; }
 
 /* Rotations for Players facing center */
 #player-2 {
     transform: rotate(90deg);
 }
-/* Counter-rotate label so it's readable? Or keep it rotated? 
-   Sketch shows P2 text is upright relative to page, but cards are rotated.
-   Actually sketch shows "P2" text upright.
-   Let's rotate the CONTAINER, then counter-rotate the label.
-*/
 #player-2 .player-label {
     transform: rotate(-90deg);
-    margin-bottom: 10px; /* Adjust spacing after rotation */
+    margin-bottom: 10px; 
 }
 
 #player-3 {
@@ -139,7 +141,7 @@ body {
 }
 #player-3 .player-label {
     transform: rotate(-180deg);
-    order: 2; /* Put label at "bottom" visually (which is top of rotated div) */
+    order: 2; 
     margin-top: 10px;
 }
 
@@ -160,7 +162,6 @@ body {
     grid-template-rows: repeat(2, var(--card-height));
 }
 
-/* Remove old specific grid overrides since we are rotating the container instead */
 .top .cards-container, .bottom .cards-container,
 .left .cards-container, .right .cards-container {
      grid-template-columns: repeat(3, var(--card-width));
@@ -203,24 +204,16 @@ body {
 .card.red { color: red; }
 .card.black { color: black; }
 
+/* Selected State for Hand Cards */
 .card.selected {
-    box-shadow: 0 0 15px var(--confirm-color); /* Green glow */
+    outline: var(--selection-outline);
+    box-shadow: 0 0 10px var(--confirm-color);
     transform: scale(1.1);
-    border-color: var(--confirm-color);
+    border-color: transparent; /* Outline takes precedence */
     z-index: 10;
 }
 
-/* Center Area */
-#center-area {
-    display: flex;
-    gap: 40px; 
-    align-items: center;
-    justify-content: center;
-    min-width: 250px;
-    position: relative;
-    padding: 20px;
-}
-
+/* Center Area Styles Restored */
 .card-pile {
     width: var(--card-width);
     height: var(--card-height);
@@ -232,9 +225,14 @@ body {
     position: relative;
     background-color: rgba(255,255,255,0.5);
     cursor: pointer;
+    transition: outline 0.1s;
 }
 
-/* Accessibility Focus for Piles */
+.selected-source {
+    outline: var(--selection-outline);
+    outline-offset: 4px;
+}
+
 .card-pile:focus-visible {
     outline: var(--focus-outline);
     outline-offset: 4px;
@@ -249,19 +247,19 @@ body {
         45deg,
         #e0f2fe 0,
         #e0f2fe 2px,
-        #1d4ed8 2px, /* Updated to match new primary color var */
+        #1d4ed8 2px,
         #1d4ed8 4px
     );
     border: 2px solid var(--primary-color);
 }
 
 #action-area {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 20;
-    pointer-events: none; 
+    width: 100px; /* Dedicate space */
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
 }
 
 #action-area:not(.hidden) {
@@ -269,22 +267,30 @@ body {
 }
 
 .hidden {
-    display: none !important;
+    visibility: hidden !important;
+    display: flex !important; /* Override the previous display:none */
 }
 
 #confirm-btn {
     background-color: var(--confirm-color);
     color: white;
     border: 2px solid #14532d; /* Darker green border */
-    padding: 12px 24px;
-    border-radius: 25px; 
-    font-size: 1.2em;
+    padding: 12px 20px; /* Adjusted padding */
+    border-radius: 50px; /* Full pill shape */
+    font-size: 1em;
     cursor: pointer;
     font-weight: bold;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
     text-transform: uppercase;
     letter-spacing: 1px;
     transition: transform 0.1s, background-color 0.2s;
+    pointer-events: auto;
+    white-space: nowrap;
+}
+
+/* Center Player 3 (Top) Horizontally in its grid area */
+#player-3 {
+    justify-self: center;
 }
 
 #confirm-btn:hover {
