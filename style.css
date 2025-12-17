@@ -213,6 +213,14 @@ body {
     z-index: 10;
 }
 
+.card.selected-yellow {
+    outline: 3px solid #eab308; /* Yellow/Orange Warning Color */
+    box-shadow: 0 0 10px #eab308;
+    transform: scale(1.05);
+    border-color: transparent;
+    z-index: 10;
+}
+
 /* Center Area Styles Restored */
 .card-pile {
     width: var(--card-width);

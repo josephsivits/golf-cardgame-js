@@ -9,14 +9,14 @@ const state = {
     drawnCard: null, 
     phase: 'setup', 
     
-    // Unified Single Selection State
+    // Composite Selection State (Simultaneous selection allowed)
     selection: {
-        type: null, // 'deck', 'discard', 'hand'
-        index: null // for hand (0-5)
+        source: null, // 'deck' or 'discard'
+        handIndex: null // for hand (0-5)
     },
     
     turnState: {
-        source: null, // 'deck' or 'discard' (where drawn card came from)
+        source: null, 
         cardsFlippedInSetup: 0 
     },
     gameOver: false
@@ -119,7 +119,7 @@ function startRound() {
 
     state.currentPlayerIndex = 0;
     state.phase = 'setup'; 
-    state.selection = { type: null, index: null };
+    state.selection = { source: null, handIndex: null };
     state.turnState = { source: null, cardsFlippedInSetup: 0 };
     
     updateUI();
@@ -167,10 +167,18 @@ function updateUI() {
                 }
             }
 
-            // Selection Logic (Single Selection)
+            // Selection Logic with Yellow/Green States
             if (state.currentPlayerIndex === pIndex) {
-                if (state.selection.type === 'hand' && state.selection.index === cIndex) {
-                    cardEl.classList.add('selected');
+                // If this specific card is selected
+                if (state.selection.handIndex === cIndex) {
+                    // Determine Color
+                    // If Phase is Draw and Card is Face Up and NO source selected -> Yellow
+                    if (state.phase === 'draw' && isVisible && !state.selection.source) {
+                        cardEl.classList.add('selected-yellow');
+                    } else {
+                        // Otherwise Green (Face Down Flip, or Source+Target Combo)
+                        cardEl.classList.add('selected');
+                    }
                 }
             }
 
@@ -204,7 +212,7 @@ function updateUI() {
             }
         };
         
-        if (state.selection.type === 'deck') {
+        if (state.selection.source === 'deck') {
             deckEl.classList.add('selected-source');
         }
     }
@@ -231,7 +239,7 @@ function updateUI() {
         discardEl.setAttribute('aria-label', 'Discard Pile: Empty');
     }
     
-    if (state.selection.type === 'discard') {
+    if (state.selection.source === 'discard') {
         discardEl.classList.add('selected-source');
     }
     
@@ -261,16 +269,25 @@ function updateUI() {
     let showConfirm = false;
     
     if (state.phase === 'setup') {
-        if (state.selection.type === 'hand' && state.selection.index !== null) showConfirm = true;
+        if (state.selection.handIndex !== null) showConfirm = true;
     }
     else if (state.phase === 'draw') {
-        // Now showing confirm for ANY valid selection type: Deck, Discard, OR Hand
-        if (state.selection.type === 'deck' || state.selection.type === 'discard' || state.selection.type === 'hand') {
+        // Show confirm if:
+        // 1. Source is selected (Drawing)
+        // 2. Hand Card (Face Down) is selected (Flipping)
+        // 3. Hand Card (Face Up) + Source is selected (Pre-selected Swap)
+        
+        if (state.selection.source) {
             showConfirm = true;
+        } else if (state.selection.handIndex !== null) {
+            const player = state.players[state.currentPlayerIndex];
+            const slot = player.hand[state.selection.handIndex];
+            // If Face Down, valid flip. If Face Up, wait for source.
+            if (!slot.faceUp) showConfirm = true;
         }
     }
     else if (state.phase === 'action') {
-        if (state.selection.type === 'hand' || state.selection.type === 'discard') showConfirm = true;
+        if (state.selection.handIndex !== null || state.selection.source === 'discard') showConfirm = true;
     }
 
     if (showConfirm) {
@@ -285,7 +302,8 @@ function updateUI() {
 function handleDeckClick() {
     if (state.gameOver) return;
     if (state.phase === 'draw') {
-        state.selection = { type: 'deck', index: null };
+        state.selection.source = 'deck'; // Set source
+        // DO NOT clear handIndex (allows composite)
         updateUI();
     }
 }
@@ -295,11 +313,12 @@ function handleDiscardClick() {
     
     if (state.phase === 'draw') {
         if (state.discardPile.length === 0) return; 
-        state.selection = { type: 'discard', index: null };
+        state.selection.source = 'discard';
         updateUI();
     } 
     else if (state.phase === 'action') {
-        state.selection = { type: 'discard', index: null }; 
+        state.selection.source = 'discard'; // Means discarding drawn card
+        state.selection.handIndex = null; // Can't swap if discarding
         updateUI();
     }
 }
@@ -311,16 +330,17 @@ function handleCardClick(pIndex, cIndex) {
     if (state.phase === 'setup') {
         const slot = state.players[pIndex].hand[cIndex];
         if (slot.faceUp) return; 
-        state.selection = { type: 'hand', index: cIndex };
+        state.selection.handIndex = cIndex;
         updateUI();
     }
     else if (state.phase === 'draw') {
-        // ALLOW selecting hand card (to potentially flip it as a turn action)
-        state.selection = { type: 'hand', index: cIndex };
+        // Select Hand Card (Additive)
+        state.selection.handIndex = cIndex;
         updateUI();
     }
     else if (state.phase === 'action') {
-        state.selection = { type: 'hand', index: cIndex };
+        state.selection.handIndex = cIndex;
+        state.selection.source = null; // Can't discard if swapping
         updateUI();
     }
 }
@@ -336,14 +356,14 @@ elements.confirmBtn.onclick = () => {
 };
 
 function confirmSetupFlip() {
-    if (state.selection.type !== 'hand' || state.selection.index === null) return;
+    if (state.selection.handIndex === null) return;
     
-    const idx = state.selection.index;
+    const idx = state.selection.handIndex;
     const player = state.players[state.currentPlayerIndex];
     
     player.hand[idx].faceUp = true;
     state.turnState.cardsFlippedInSetup++;
-    state.selection = { type: null, index: null };
+    state.selection = { source: null, handIndex: null };
     
     if (state.turnState.cardsFlippedInSetup >= 2) {
         state.turnState.cardsFlippedInSetup = 0;
@@ -359,48 +379,58 @@ function confirmSetupFlip() {
 }
 
 function confirmDrawPhase() {
-    const type = state.selection.type;
+    const { source, handIndex } = state.selection;
     
-    if (type === 'deck') {
+    // 1. Deck Draw
+    if (source === 'deck') {
         const card = state.deck.pop();
         state.drawnCard = card;
         state.turnState.source = 'deck';
         state.phase = 'action';
+        // Preserve handIndex if set (pre-selection for swap)
+        state.selection.source = null; // Clear source as we used it
     }
-    else if (type === 'discard') {
+    // 2. Discard Draw (and Swap?)
+    else if (source === 'discard') {
         const card = state.discardPile.pop();
         state.drawnCard = card;
         state.turnState.source = 'discard';
-        state.phase = 'action';
+        
+        if (handIndex !== null) {
+            // Immediate Swap if target also selected
+            executeSwap(handIndex);
+            return;
+        } else {
+            state.phase = 'action';
+            state.selection.source = null;
+        }
     }
-    else if (type === 'hand' && state.selection.index !== null) {
-        // Special Rule: Flip a face-down card instead of drawing
-        // This counts as the entire turn.
+    // 3. Face-Down Flip (Turn Action)
+    else if (handIndex !== null && !source) {
         const player = state.players[state.currentPlayerIndex];
-        const slot = player.hand[state.selection.index];
+        const slot = player.hand[handIndex];
         
         if (!slot.faceUp) {
             slot.faceUp = true;
-            state.selection = { type: null, index: null };
+            state.selection = { source: null, handIndex: null };
             endTurn();
-            return; // Exit early as turn is over
+            return;
         }
     }
     
-    state.selection = { type: null, index: null };
     updateUI();
 }
 
 function confirmActionPhase() {
-    if (state.selection.type === 'discard') {
+    if (state.selection.source === 'discard') {
         // Discarding the drawn card
         state.discardPile.push(state.drawnCard);
         state.drawnCard = null;
-        state.selection = { type: null, index: null };
+        state.selection = { source: null, handIndex: null };
         endTurn();
     } 
-    else if (state.selection.type === 'hand' && state.selection.index !== null) {
-        executeSwap(state.selection.index);
+    else if (state.selection.handIndex !== null) {
+        executeSwap(state.selection.handIndex);
     }
 }
 
@@ -415,7 +445,7 @@ function executeSwap(handIndex) {
     state.discardPile.push(oldCard);
     state.drawnCard = null;
     
-    state.selection = { type: null, index: null };
+    state.selection = { source: null, handIndex: null };
     endTurn();
 }
 
@@ -429,7 +459,7 @@ function endTurn() {
     }
 
     state.phase = 'draw';
-    state.selection = { type: null, index: null };
+    state.selection = { source: null, handIndex: null };
     state.drawnCard = null;
     state.currentPlayerIndex = (state.currentPlayerIndex + 1) % 4;
     
