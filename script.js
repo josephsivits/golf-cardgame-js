@@ -264,11 +264,12 @@ function updateUI() {
         if (state.selection.type === 'hand' && state.selection.index !== null) showConfirm = true;
     }
     else if (state.phase === 'draw') {
-        // Only show confirm if Source is selected
-        if (state.selection.type === 'deck' || state.selection.type === 'discard') showConfirm = true;
+        // Now showing confirm for ANY valid selection type: Deck, Discard, OR Hand
+        if (state.selection.type === 'deck' || state.selection.type === 'discard' || state.selection.type === 'hand') {
+            showConfirm = true;
+        }
     }
     else if (state.phase === 'action') {
-        // Show confirm if Target is selected (swap) OR Discard is selected (discard drawn)
         if (state.selection.type === 'hand' || state.selection.type === 'discard') showConfirm = true;
     }
 
@@ -284,7 +285,6 @@ function updateUI() {
 function handleDeckClick() {
     if (state.gameOver) return;
     if (state.phase === 'draw') {
-        // Strict Single Selection: Select Deck
         state.selection = { type: 'deck', index: null };
         updateUI();
     }
@@ -299,7 +299,6 @@ function handleDiscardClick() {
         updateUI();
     } 
     else if (state.phase === 'action') {
-        // Discarding the drawn card
         state.selection = { type: 'discard', index: null }; 
         updateUI();
     }
@@ -316,12 +315,11 @@ function handleCardClick(pIndex, cIndex) {
         updateUI();
     }
     else if (state.phase === 'draw') {
-        // Allowed but invalid for confirmation (allows highlighting card to see it's selected)
+        // ALLOW selecting hand card (to potentially flip it as a turn action)
         state.selection = { type: 'hand', index: cIndex };
         updateUI();
     }
     else if (state.phase === 'action') {
-        // Select card to swap
         state.selection = { type: 'hand', index: cIndex };
         updateUI();
     }
@@ -374,6 +372,19 @@ function confirmDrawPhase() {
         state.drawnCard = card;
         state.turnState.source = 'discard';
         state.phase = 'action';
+    }
+    else if (type === 'hand' && state.selection.index !== null) {
+        // Special Rule: Flip a face-down card instead of drawing
+        // This counts as the entire turn.
+        const player = state.players[state.currentPlayerIndex];
+        const slot = player.hand[state.selection.index];
+        
+        if (!slot.faceUp) {
+            slot.faceUp = true;
+            state.selection = { type: null, index: null };
+            endTurn();
+            return; // Exit early as turn is over
+        }
     }
     
     state.selection = { type: null, index: null };
