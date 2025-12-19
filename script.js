@@ -204,7 +204,11 @@ function updateUI() {
             cardEl.setAttribute('aria-label', isVisible ? `${slot.card.value} of ${slot.card.suit}` : 'Face down card');
             
             if (isVisible) {
-                cardEl.textContent = `${slot.card.value}${slot.card.suit}`;
+                const valueEl = document.createElement('div');
+                valueEl.className = 'card-value';
+                valueEl.textContent = `${slot.card.value}${slot.card.suit}`;
+                cardEl.appendChild(valueEl);
+                
                 if (['♥', '♦'].includes(slot.card.suit)) {
                     cardEl.classList.add('red');
                 } else {
@@ -276,7 +280,12 @@ function updateUI() {
     if (topDiscard) {
         const cardEl = document.createElement('div');
         cardEl.className = 'card face-up';
-        cardEl.textContent = `${topDiscard.value}${topDiscard.suit}`;
+        
+        const valueEl = document.createElement('div');
+        valueEl.className = 'card-value';
+        valueEl.textContent = `${topDiscard.value}${topDiscard.suit}`;
+        cardEl.appendChild(valueEl);
+        
         if (['♥', '♦'].includes(topDiscard.suit)) {
             cardEl.classList.add('red');
         } else {
@@ -311,7 +320,12 @@ function updateUI() {
              drawnEl.className = 'card face-up';
              drawnEl.style.position = 'absolute';
              drawnEl.style.zIndex = 10;
-             drawnEl.textContent = `${state.drawnCard.value}${state.drawnCard.suit}`;
+             
+             const valueEl = document.createElement('div');
+             valueEl.className = 'card-value';
+             valueEl.textContent = `${state.drawnCard.value}${state.drawnCard.suit}`;
+             drawnEl.appendChild(valueEl);
+             
              if (['♥', '♦'].includes(state.drawnCard.suit)) drawnEl.classList.add('red');
              else drawnEl.classList.add('black');
              deckEl.appendChild(drawnEl);

@@ -137,18 +137,16 @@ body {
 .game-layout {
     display: grid;
     grid-template-areas:
-        ".        player8   player3  player3   player3  player5  ."
-        "player2  .         deck     confirm   discard  .       player4"
-        "player7  .         .        .         .        .       player6"
-        ".        player1   player1  player1   player1  player1  ."
+        "player8  player3  player5"
+        "player2  center   player4"
+        "player7  player1  player6"
     ;
     gap: 20px;
     justify-items: center;
-    align-items: center;
+    align-items: stretch; /* Stretch to fill grid cell height */
     width: 100%;
-    /* Columns: empty | P8 | P3 | Deck/Confirm/Discard | P5 | empty */
-    grid-template-columns: 1fr auto 1fr auto auto auto 1fr;
-    grid-template-rows: 1fr auto auto 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr 1fr;
 }
 
 /* Hide players 5-8 by default, will be shown via JavaScript */
@@ -156,20 +154,28 @@ body {
     display: none;
 }
 
-/* Update Grid Areas for Center Elements */
-#deck { grid-area: deck; }
-#action-area { grid-area: confirm; }
-#discard-pile { grid-area: discard; }
+/* Center Area - Contains deck, confirm, and discard */
+#center-area {
+    grid-area: center;
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    justify-content: center;
+}
 
 .player-area {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: 10px;
     padding: 20px 10px;
+    padding-bottom: 50px; /* Space for label at bottom */
     border-radius: 15px;
     transition: box-shadow 0.3s ease;
     border: 2px solid transparent; /* Reserve space for border */
+    min-height: 100%;
+    position: relative; /* For absolute positioning of label */
 }
 
 /* Active Player Indication */
@@ -183,9 +189,16 @@ body {
     font-weight: bold;
     color: #333;
     margin: 0; /* Reset h2 margin */
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10; /* Ensure label is above cards */
+    pointer-events: none; /* Don't interfere with card clicks */
+    white-space: nowrap; /* Prevent text wrapping */
 }
 
-/* Grid Positioning */
+/* Grid Positioning - 3x3 Layout */
 #player-1 { grid-area: player1; }
 #player-2 { grid-area: player2; }
 #player-3 { grid-area: player3; }
@@ -195,83 +208,113 @@ body {
 #player-7 { grid-area: player7; }
 #player-8 { grid-area: player8; }
 
-/* Rotations for Players facing center */
+/* Rotations for Players facing center - Labels always at visual bottom of grid cell */
+/* P1: No rotation needed, uses default .player-label positioning */
+
 #player-2 {
     transform: rotate(90deg);
 }
 #player-2 .player-label {
-    transform: rotate(-90deg);
-    margin-bottom: 10px; 
+    /* P2: 90deg rotation - bottom becomes right, position at visual bottom (right side) */
+    bottom: auto;
+    right: 10px;
+    top: 50%;
+    left: auto;
+    transform: translateY(-50%) rotate(-90deg);
 }
-#player-2 .cards-container {
-    transform: rotate(-90deg); /* Counter-rotate cards to vertical */
+#player-2 .card-value {
+    transform: rotate(-90deg); /* Counter-rotate text to stay upright */
 }
 
 #player-3 {
     transform: rotate(180deg);
 }
 #player-3 .player-label {
-    transform: rotate(-180deg);
-    order: 2; 
-    margin-top: 10px;
+    /* P3: 180deg rotation - bottom becomes top, position at visual bottom (top side) */
+    bottom: auto;
+    top: 10px;
+    transform: translateX(-50%) rotate(-180deg);
 }
-#player-3 .cards-container {
-    transform: rotate(-180deg); /* Counter-rotate cards to vertical */
+#player-3 .card-value {
+    transform: rotate(-180deg); /* Counter-rotate text to stay upright */
 }
 
 #player-4 {
     transform: rotate(-90deg);
 }
 #player-4 .player-label {
-    transform: rotate(90deg);
-    margin-bottom: 10px;
+    /* P4: -90deg rotation - bottom becomes left, position at visual bottom (left side) */
+    bottom: auto;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%) rotate(90deg);
 }
-#player-4 .cards-container {
-    transform: rotate(90deg); /* Counter-rotate cards to vertical */
+#player-4 .card-value {
+    transform: rotate(90deg); /* Counter-rotate text to stay upright */
 }
 
-/* Player 5 (Top-Right) - rotated -45deg */
+/* Player 5 (Top-Right) - rotated -135deg to face center */
 #player-5 {
-    transform: rotate(-45deg);
+    transform: rotate(-135deg);
 }
 #player-5 .player-label {
-    transform: rotate(45deg);
+    /* P5: -135deg rotation - Visual bottom is Top-Right corner */
+    bottom: auto;
+    left: auto;
+    top: -10px;
+    right: -10px;
+    transform: rotate(135deg);
 }
-#player-5 .cards-container {
-    transform: rotate(45deg); /* Counter-rotate cards to vertical */
+#player-5 .card-value {
+    transform: rotate(135deg); /* Counter-rotate text to stay upright */
 }
 
-/* Player 6 (Right-Bottom) - rotated -135deg */
+/* Player 6 (Right-Bottom) - rotated -45deg to face center */
 #player-6 {
-    transform: rotate(-135deg);
-}
-#player-6 .player-label {
-    transform: rotate(135deg);
-}
-#player-6 .cards-container {
-    transform: rotate(135deg); /* Counter-rotate cards to vertical */
-}
-
-/* Player 7 (Bottom-Left) - rotated 135deg */
-#player-7 {
-    transform: rotate(135deg);
-}
-#player-7 .player-label {
-    transform: rotate(-135deg);
-}
-#player-7 .cards-container {
-    transform: rotate(-135deg); /* Counter-rotate cards to vertical */
-}
-
-/* Player 8 (Left-Top) - rotated 45deg */
-#player-8 {
-    transform: rotate(45deg);
-}
-#player-8 .player-label {
     transform: rotate(-45deg);
 }
-#player-8 .cards-container {
-    transform: rotate(-45deg); /* Counter-rotate cards to vertical */
+#player-6 .player-label {
+    /* P6: -45deg rotation - Visual bottom is Bottom-Left corner */
+    top: auto;
+    right: auto;
+    bottom: -10px;
+    left: -10px;
+    transform: rotate(45deg);
+}
+#player-6 .card-value {
+    transform: rotate(45deg); /* Counter-rotate text to stay upright */
+}
+
+/* Player 7 (Bottom-Left) - rotated 45deg to face center */
+#player-7 {
+    transform: rotate(45deg);
+}
+#player-7 .player-label {
+    /* P7: 45deg rotation - Visual bottom is Bottom-Right corner */
+    top: auto;
+    left: auto;
+    bottom: -10px;
+    right: -10px;
+    transform: rotate(-45deg);
+}
+#player-7 .card-value {
+    transform: rotate(-45deg); /* Counter-rotate text to stay upright */
+}
+
+/* Player 8 (Left-Top) - rotated 135deg to face center */
+#player-8 {
+    transform: rotate(135deg);
+}
+#player-8 .player-label {
+    /* P8: 135deg rotation - Visual bottom is Top-Right corner */
+    bottom: auto;
+    left: auto;
+    top: -10px;
+    right: -10px;
+    transform: rotate(-135deg);
+}
+#player-8 .card-value {
+    transform: rotate(-135deg); /* Counter-rotate text to stay upright */
 }
 
 
@@ -281,6 +324,7 @@ body {
     /* Standardize ALL players to 3x2 grid */
     grid-template-columns: repeat(3, var(--card-width));
     grid-template-rows: repeat(2, var(--card-height));
+    order: 1; /* Ensure cards are always first visually */
 }
 
 .top .cards-container, .bottom .cards-container,
