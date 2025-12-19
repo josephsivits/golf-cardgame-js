@@ -8,6 +8,7 @@ const state = {
     maxRounds: 6,
     drawnCard: null, 
     phase: 'setup', 
+    numPlayers: 4, // Default to 4 players
     
     // Composite Selection State (Simultaneous selection allowed)
     selection: {
@@ -34,7 +35,11 @@ const elements = {
         document.getElementById('score-p1'),
         document.getElementById('score-p2'),
         document.getElementById('score-p3'),
-        document.getElementById('score-p4')
+        document.getElementById('score-p4'),
+        document.getElementById('score-p5'),
+        document.getElementById('score-p6'),
+        document.getElementById('score-p7'),
+        document.getElementById('score-p8')
     ],
     players: [
         {
@@ -56,6 +61,26 @@ const elements = {
             div: document.getElementById('player-4'),
             container: document.querySelector('#player-4 .cards-container'),
             label: document.querySelector('#player-4 .player-label')
+        },
+        {
+            div: document.getElementById('player-5'),
+            container: document.querySelector('#player-5 .cards-container'),
+            label: document.querySelector('#player-5 .player-label')
+        },
+        {
+            div: document.getElementById('player-6'),
+            container: document.querySelector('#player-6 .cards-container'),
+            label: document.querySelector('#player-6 .player-label')
+        },
+        {
+            div: document.getElementById('player-7'),
+            container: document.querySelector('#player-7 .cards-container'),
+            label: document.querySelector('#player-7 .player-label')
+        },
+        {
+            div: document.getElementById('player-8'),
+            container: document.querySelector('#player-8 .cards-container'),
+            label: document.querySelector('#player-8 .player-label')
         }
     ]
 };
@@ -91,14 +116,32 @@ function shuffle(array) {
 function initGame() {
     state.currentRound = 1;
     state.gameOver = false;
-    state.players = Array(4).fill(null).map((_, i) => ({
+    state.players = Array(state.numPlayers).fill(null).map((_, i) => ({
         id: i,
         hand: [],
         totalScore: 0,
         roundScore: 0
     }));
     
+    updatePlayerVisibility();
     startRound();
+}
+
+function updatePlayerVisibility() {
+    // Show/hide player areas and scores based on numPlayers
+    elements.players.forEach((player, index) => {
+        if (index < state.numPlayers) {
+            player.div.style.display = 'flex';
+            if (elements.playerScores[index]) {
+                elements.playerScores[index].style.display = 'block';
+            }
+        } else {
+            player.div.style.display = 'none';
+            if (elements.playerScores[index]) {
+                elements.playerScores[index].style.display = 'none';
+            }
+        }
+    });
 }
 
 function startRound() {
@@ -131,7 +174,9 @@ function updateUI() {
     
     // Update Scores
     state.players.forEach((p, i) => {
-        elements.playerScores[i].textContent = `P${i+1}: ${p.totalScore}`;
+        if (elements.playerScores[i]) {
+            elements.playerScores[i].textContent = `P${i+1}: ${p.totalScore}`;
+        }
     });
 
     // Render Players
@@ -399,7 +444,7 @@ function confirmSetupFlip() {
     
     if (state.turnState.cardsFlippedInSetup >= 2) {
         state.turnState.cardsFlippedInSetup = 0;
-        if (state.currentPlayerIndex === 3) {
+        if (state.currentPlayerIndex === state.numPlayers - 1) {
             state.currentPlayerIndex = 0;
             state.phase = 'draw';
         } else {
@@ -490,7 +535,7 @@ function endTurn() {
     state.phase = 'draw';
     state.selection = { source: null, handIndex: null };
     state.drawnCard = null;
-    state.currentPlayerIndex = (state.currentPlayerIndex + 1) % 4;
+    state.currentPlayerIndex = (state.currentPlayerIndex + 1) % state.numPlayers;
     
     updateUI();
 }
@@ -529,6 +574,17 @@ function calculateScores() {
         }
     }, 1000);
 }
+
+// Player Selector Event Listeners
+document.querySelectorAll('input[name="player-count"]').forEach(radio => {
+    radio.addEventListener('change', (e) => {
+        const numPlayers = parseInt(e.target.value);
+        if (numPlayers !== state.numPlayers) {
+            state.numPlayers = numPlayers;
+            initGame();
+        }
+    });
+});
 
 // Start
 initGame();

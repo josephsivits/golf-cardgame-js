@@ -8,6 +8,53 @@
 </head>
 <body>
     <div id="game-container">
+        <!-- Player Configuration -->
+        <div id="player-config" class="player-config">
+            <label for="player-selector" class="config-label">players</label>
+            <div id="player-selector" class="player-selector" role="radiogroup" aria-label="Select number of players">
+                <input type="radio" id="player-1-option" name="player-count" value="1" class="player-option-input">
+                <label for="player-1-option" class="player-option">
+                    <span class="player-number">1</span>
+                    <span class="player-circle"></span>
+                </label>
+                <input type="radio" id="player-2-option" name="player-count" value="2" class="player-option-input">
+                <label for="player-2-option" class="player-option">
+                    <span class="player-number">2</span>
+                    <span class="player-circle"></span>
+                </label>
+                <input type="radio" id="player-3-option" name="player-count" value="3" class="player-option-input">
+                <label for="player-3-option" class="player-option">
+                    <span class="player-number">3</span>
+                    <span class="player-circle"></span>
+                </label>
+                <input type="radio" id="player-4-option" name="player-count" value="4" class="player-option-input" checked>
+                <label for="player-4-option" class="player-option">
+                    <span class="player-number">4</span>
+                    <span class="player-circle"></span>
+                </label>
+                <input type="radio" id="player-5-option" name="player-count" value="5" class="player-option-input">
+                <label for="player-5-option" class="player-option">
+                    <span class="player-number">5</span>
+                    <span class="player-circle"></span>
+                </label>
+                <input type="radio" id="player-6-option" name="player-count" value="6" class="player-option-input">
+                <label for="player-6-option" class="player-option">
+                    <span class="player-number">6</span>
+                    <span class="player-circle"></span>
+                </label>
+                <input type="radio" id="player-7-option" name="player-count" value="7" class="player-option-input">
+                <label for="player-7-option" class="player-option">
+                    <span class="player-number">7</span>
+                    <span class="player-circle"></span>
+                </label>
+                <input type="radio" id="player-8-option" name="player-count" value="8" class="player-option-input">
+                <label for="player-8-option" class="player-option">
+                    <span class="player-number">8</span>
+                    <span class="player-circle"></span>
+                </label>
+            </div>
+        </div>
+
         <!-- Header / Status Bar -->
         <header id="game-header">
             <h1 class="logo">Golf</h1>
@@ -16,6 +63,10 @@
                 <div class="player-score" id="score-p2" aria-live="polite">P2: 0</div>
                 <div class="player-score" id="score-p3" aria-live="polite">P3: 0</div>
                 <div class="player-score" id="score-p4" aria-live="polite">P4: 0</div>
+                <div class="player-score" id="score-p5" aria-live="polite">P5: 0</div>
+                <div class="player-score" id="score-p6" aria-live="polite">P6: 0</div>
+                <div class="player-score" id="score-p7" aria-live="polite">P7: 0</div>
+                <div class="player-score" id="score-p8" aria-live="polite">P8: 0</div>
             </div>
             <div id="round-tracker" aria-live="polite">Round <span id="current-round">1</span>/6</div>
         </header>
@@ -51,6 +102,30 @@
             <!-- Player 4 (Right) -->
             <section id="player-4" class="player-area right" aria-label="Player 4">
                 <h2 class="player-label">P4</h2>
+                <div class="cards-container"></div>
+            </section>
+
+            <!-- Player 5 (Top-Right) -->
+            <section id="player-5" class="player-area top-right" aria-label="Player 5">
+                <h2 class="player-label">P5</h2>
+                <div class="cards-container"></div>
+            </section>
+
+            <!-- Player 6 (Right-Bottom) -->
+            <section id="player-6" class="player-area right-bottom" aria-label="Player 6">
+                <h2 class="player-label">P6</h2>
+                <div class="cards-container"></div>
+            </section>
+
+            <!-- Player 7 (Bottom-Left) -->
+            <section id="player-7" class="player-area bottom-left" aria-label="Player 7">
+                <h2 class="player-label">P7</h2>
+                <div class="cards-container"></div>
+            </section>
+
+            <!-- Player 8 (Left-Top) -->
+            <section id="player-8" class="player-area left-top" aria-label="Player 8">
+                <h2 class="player-label">P8</h2>
                 <div class="cards-container"></div>
             </section>
 

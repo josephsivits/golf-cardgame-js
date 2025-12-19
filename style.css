@@ -37,6 +37,64 @@ body {
     padding: 20px;
 }
 
+/* Player Configuration Component */
+.player-config {
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.config-label {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: var(--primary-color);
+    font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+}
+
+.player-selector {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.player-option-input {
+    display: none;
+}
+
+.player-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.player-option:hover {
+    transform: scale(1.1);
+}
+
+.player-number {
+    font-size: 1em;
+    font-weight: bold;
+    color: var(--primary-color);
+    font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+}
+
+.player-circle {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--primary-color);
+    border-radius: 50%;
+    background-color: transparent;
+    transition: background-color 0.2s;
+}
+
+.player-option-input:checked + .player-option .player-circle {
+    background-color: var(--primary-color);
+}
+
 #game-header {
     display: flex;
     gap: 20px;
@@ -79,17 +137,23 @@ body {
 .game-layout {
     display: grid;
     grid-template-areas:
-        ".        player3  player3   player3  ."
-        "player2  deck     confirm   discard  player4"
-        ".        player1  player1   player1  ."
+        ".        player8   player3  player3   player3  player5  ."
+        "player2  .         deck     confirm   discard  .       player4"
+        "player7  .         .        .         .        .       player6"
+        ".        player1   player1  player1   player1  player1  ."
     ;
     gap: 20px;
     justify-items: center;
     align-items: center;
     width: 100%;
-    /* Columns: P2 | Deck | Confirm | Discard | P4 */
-    grid-template-columns: 1fr auto auto auto 1fr;
-    grid-template-rows: 1fr auto 1fr;
+    /* Columns: empty | P8 | P3 | Deck/Confirm/Discard | P5 | empty */
+    grid-template-columns: 1fr auto 1fr auto auto auto 1fr;
+    grid-template-rows: 1fr auto auto 1fr;
+}
+
+/* Hide players 5-8 by default, will be shown via JavaScript */
+#player-5, #player-6, #player-7, #player-8 {
+    display: none;
 }
 
 /* Update Grid Areas for Center Elements */
@@ -126,6 +190,10 @@ body {
 #player-2 { grid-area: player2; }
 #player-3 { grid-area: player3; }
 #player-4 { grid-area: player4; }
+#player-5 { grid-area: player5; }
+#player-6 { grid-area: player6; }
+#player-7 { grid-area: player7; }
+#player-8 { grid-area: player8; }
 
 /* Rotations for Players facing center */
 #player-2 {
@@ -160,6 +228,50 @@ body {
 }
 #player-4 .cards-container {
     transform: rotate(90deg); /* Counter-rotate cards to vertical */
+}
+
+/* Player 5 (Top-Right) - rotated -45deg */
+#player-5 {
+    transform: rotate(-45deg);
+}
+#player-5 .player-label {
+    transform: rotate(45deg);
+}
+#player-5 .cards-container {
+    transform: rotate(45deg); /* Counter-rotate cards to vertical */
+}
+
+/* Player 6 (Right-Bottom) - rotated -135deg */
+#player-6 {
+    transform: rotate(-135deg);
+}
+#player-6 .player-label {
+    transform: rotate(135deg);
+}
+#player-6 .cards-container {
+    transform: rotate(135deg); /* Counter-rotate cards to vertical */
+}
+
+/* Player 7 (Bottom-Left) - rotated 135deg */
+#player-7 {
+    transform: rotate(135deg);
+}
+#player-7 .player-label {
+    transform: rotate(-135deg);
+}
+#player-7 .cards-container {
+    transform: rotate(-135deg); /* Counter-rotate cards to vertical */
+}
+
+/* Player 8 (Left-Top) - rotated 45deg */
+#player-8 {
+    transform: rotate(45deg);
+}
+#player-8 .player-label {
+    transform: rotate(-45deg);
+}
+#player-8 .cards-container {
+    transform: rotate(-45deg); /* Counter-rotate cards to vertical */
 }
 
 
