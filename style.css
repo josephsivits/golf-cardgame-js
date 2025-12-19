@@ -102,7 +102,7 @@ body {
     flex-direction: column;
     align-items: center;
     gap: 10px;
-    padding: 10px;
+    padding: 20px 10px;
     border-radius: 15px;
     transition: box-shadow 0.3s ease;
     border: 2px solid transparent; /* Reserve space for border */
@@ -135,6 +135,9 @@ body {
     transform: rotate(-90deg);
     margin-bottom: 10px; 
 }
+#player-2 .cards-container {
+    transform: rotate(-90deg); /* Counter-rotate cards to vertical */
+}
 
 #player-3 {
     transform: rotate(180deg);
@@ -144,6 +147,9 @@ body {
     order: 2; 
     margin-top: 10px;
 }
+#player-3 .cards-container {
+    transform: rotate(-180deg); /* Counter-rotate cards to vertical */
+}
 
 #player-4 {
     transform: rotate(-90deg);
@@ -151,6 +157,9 @@ body {
 #player-4 .player-label {
     transform: rotate(90deg);
     margin-bottom: 10px;
+}
+#player-4 .cards-container {
+    transform: rotate(90deg); /* Counter-rotate cards to vertical */
 }
 
 
