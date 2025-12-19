@@ -250,6 +250,11 @@ body {
     outline-offset: 4px;
 }
 
+.selected-source-yellow {
+    outline: 3px solid #eab308; /* Yellow/Orange Warning Color */
+    outline-offset: 4px;
+}
+
 .card-pile:focus-visible {
     outline: var(--focus-outline);
     outline-offset: 4px;

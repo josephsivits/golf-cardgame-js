@@ -180,6 +180,10 @@ function updateUI() {
                         cardEl.classList.add('selected');
                     }
                 }
+                // If deck was drawn, show yellow outline on all cards (face-up and face-down)
+                else if (state.phase === 'action' && state.turnState.source === 'deck') {
+                    cardEl.classList.add('selected-yellow');
+                }
             }
 
             const clickHandler = () => handleCardClick(pIndex, cIndex);
@@ -220,7 +224,7 @@ function updateUI() {
     // Render Discard
     const discardEl = elements.discardPile;
     discardEl.innerHTML = '';
-    discardEl.classList.remove('selected-source');
+    discardEl.classList.remove('selected-source', 'selected-source-yellow');
     
     const topDiscard = state.discardPile[state.discardPile.length - 1];
     
@@ -239,7 +243,11 @@ function updateUI() {
         discardEl.setAttribute('aria-label', 'Discard Pile: Empty');
     }
     
-    if (state.selection.source === 'discard') {
+    // Show yellow outline when deck was drawn (action phase with deck source)
+    if (state.phase === 'action' && state.turnState.source === 'deck') {
+        discardEl.classList.add('selected-source-yellow');
+    }
+    else if (state.selection.source === 'discard') {
         discardEl.classList.add('selected-source');
     }
     
